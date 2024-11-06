@@ -10,3 +10,8 @@ To set up and run this project on your local machine:
 
    ```bash
    git clone https://github.com/q1xuanx/recommendation-api.git
+   
+2. **Use API**
+
+   ```bash
+   GET: http://localhost:8080/food/search-food?search={sample_food}
