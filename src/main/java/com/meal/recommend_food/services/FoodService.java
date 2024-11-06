@@ -32,7 +32,7 @@ public class FoodService {
         Map<String, List<Food>> outputs = new HashMap<>();
         for (String s : splitArray){
             outputs.putIfAbsent(s, new ArrayList<>());
-            List<Food> foods = foodRepository.findAll().stream().filter(food -> food.getNameOfFood().contains(s)).toList();
+            List<Food> foods = foodRepository.findAll().stream().filter(food -> food.getNameOfFood().toLowerCase().contains(s.toLowerCase())).toList();
             outputs.put(s, foods);
         }
         if (outputs.isEmpty()){
