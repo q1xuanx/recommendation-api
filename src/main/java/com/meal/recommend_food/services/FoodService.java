@@ -48,7 +48,16 @@ public class FoodService {
         for (Map.Entry<String, Double> entry : recommend.entrySet()){
             data.add(new Pair<>(entry.getKey(), entry.getValue()));
         }
-        data.sort(Comparator.comparing(Pair::getValue));
-        return new ApiResponse(200, "data recommended", data.reversed().stream().limit(10));
+        int k = data.size();
+        Random random = new Random();
+        for (int i = 0; i < data.size(); i++){
+            int index = random.nextInt(k);
+            Collections.swap(data, i, index);
+            k -= 1;
+            if (k == 0){
+                break;
+            }
+        }
+        return new ApiResponse(200, "data recommended", data.stream().limit(10));
     }
 }
