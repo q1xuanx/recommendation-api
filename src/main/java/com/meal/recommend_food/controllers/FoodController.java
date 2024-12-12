@@ -1,6 +1,7 @@
 package com.meal.recommend_food.controllers;
 
 
+import com.meal.recommend_food.components.AddDataComponent;
 import com.meal.recommend_food.response.ApiResponse;
 import com.meal.recommend_food.services.FoodService;
 import lombok.Getter;
@@ -21,7 +22,8 @@ public class FoodController {
         return foodService.searchData(search);
     }
     @PostMapping("/recommend-food")
-    public ApiResponse recommendFood(@RequestBody List<String> foodChoice) throws IOException, ClassNotFoundException {
-        return foodService.recommendData(foodChoice);
+    public ApiResponse recommendFood(@RequestBody List<String> foodChoice) throws IOException, ClassNotFoundException, InterruptedException {
+        List<Integer> listFood = AddDataComponent.changeInputFoodToNum(foodChoice);
+        return foodService.recommendData(listFood);
     }
 }

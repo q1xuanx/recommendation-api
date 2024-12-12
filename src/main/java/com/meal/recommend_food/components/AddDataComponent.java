@@ -2,17 +2,93 @@ package com.meal.recommend_food.components;
 
 
 import com.meal.recommend_food.services.FoodService;
+import com.opencsv.CSVReader;
 import jakarta.annotation.PostConstruct;
+import org.example.Pair;
+import org.example.RecommendModel;
 import org.springframework.stereotype.Component;
-
-import java.util.Arrays;
-import java.util.List;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.*;
 
 @Component
 public class AddDataComponent {
     private final FoodService foodService;
+    public static List<List<Integer>> dataNumber;
+    public static Map<String, Integer> dataMapping;
+    public static Map<Integer, String> reverseMapping;
+    public static RecommendModel recommendModel;
+    public static Map<Pair<Integer, Double>, Map<Integer, Map<Integer,Double>>> trainedPairwise;
     public AddDataComponent(FoodService foodService) {
         this.foodService = foodService;
+    }
+    public static List<String> readData(String nameDataSet){
+        List<String> data = new ArrayList<>();
+        List<List<String>> records = new ArrayList<>();
+        try(CSVReader csvReader = new CSVReader(new FileReader(nameDataSet));){
+            String[] nextRecord = null;
+            while ((nextRecord = csvReader.readNext()) != null){
+                records.add(Arrays.asList(nextRecord));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        for(int i = 1; i < records.size(); i++){
+            data.add(records.get(i).get(1));
+        }
+        return data;
+    }
+    public void prepareData() throws InterruptedException {
+        List<String> data = readData("C:\\Users\\ADMIN\\Desktop\\recommend-food\\recommend-food\\src\\main\\java\\com\\meal\\recommend_food\\dataset.csv");
+        if(!data.isEmpty()){
+            dataMapping = prepareData(data);
+            reverseDataMapping(dataMapping);
+            dataNumber = changeDataTrainToNumber(data, dataMapping);
+            System.out.println("Dữ liệu đã chuyển đổi thành công");
+            recommendModel = new RecommendModel();
+            trainedPairwise = recommendModel.trainPairwise(dataNumber);
+            System.out.println(trainedPairwise.size());
+            System.out.println("Train pairwise thành công");
+        }
+    }
+    public Map<String, Integer> prepareData(List<String> data){
+        int i = 1;
+        Map<String, Integer> listDataToMapping = new HashMap<>();
+        for (String s : data){
+            List<String> split = Arrays.stream(s.split(", ")).map(String::valueOf).toList();
+            for (String s1 : split){
+                if (!listDataToMapping.containsKey(s1)){
+                    listDataToMapping.put(s1, i);
+                    i++;
+                }
+            }
+        }
+        return listDataToMapping;
+    }
+    public static List<List<Integer>> changeDataTrainToNumber(List<String> data, Map<String, Integer> mappingValue){
+        List<List<Integer>> listData = new ArrayList<>();
+        for (String s : data){
+            String[] temp = s.split(", ");
+            List<Integer> dataAdd = new ArrayList<>();
+            for (String s2 : temp){
+                dataAdd.add(mappingValue.get(s2));
+            }
+            listData.add(dataAdd);
+        }
+        return listData;
+    }
+    public static void reverseDataMapping(Map<String, Integer> data){
+        reverseMapping = new HashMap<>();
+        for (Map.Entry<String, Integer> entry : data.entrySet()){
+            reverseMapping.put(entry.getValue(), entry.getKey());
+        }
+    }
+    public static List<Integer> changeInputFoodToNum(List<String> data){
+        List<Integer> dataPrepared = new ArrayList<>();
+        for (String s : data){
+            dataPrepared.add(dataMapping.get(s));
+        }
+        return dataPrepared;
     }
     public List<String> makeList (){
         return Arrays.asList("Bầu Xào",
@@ -610,9 +686,10 @@ public class AddDataComponent {
     }
 
     @PostConstruct
-    public void init(){
+    public void init() throws InterruptedException {
         List<String> data = makeList();
         foodService.addData(data);
         System.out.println("Đã thực hiện thành công !");
+        prepareData();
     }
 }

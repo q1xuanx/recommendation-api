@@ -1,13 +1,12 @@
 package com.meal.recommend_food.services;
 
+import com.meal.recommend_food.components.AddDataComponent;
 import com.meal.recommend_food.entities.Food;
 import com.meal.recommend_food.repositories.FoodRepository;
 import com.meal.recommend_food.response.ApiResponse;
-import com.meal.recommend_food.utils.Pair;
 import lombok.RequiredArgsConstructor;
-import org.example.RecommendModel;
+import org.example.Pair;
 import org.springframework.stereotype.Service;
-import java.io.IOException;
 import java.util.*;
 
 
@@ -40,24 +39,20 @@ public class FoodService {
         }
         return new ApiResponse(200, "find success", outputs);
     }
-    public ApiResponse recommendData(List<String> inputFood) throws IOException, ClassNotFoundException {
-        RecommendModel model = new RecommendModel();
-        model.loadModel(getClass().getResourceAsStream("/modelRecommend.ser"));
-        Map<String, Double> recommend = model.recommend(inputFood);
-        List<Pair<String, Double>> data = new ArrayList<>();
-        for (Map.Entry<String, Double> entry : recommend.entrySet()){
-            data.add(new Pair<>(entry.getKey(), entry.getValue()));
+    public ApiResponse recommendData(List<Integer> inputFood) throws InterruptedException {
+        Map<Pair<List<Integer>, Double>, Map<List<Integer>, Map<Integer,Double>>> dataTrain =  AddDataComponent.recommendModel.trainConstraint(AddDataComponent.dataNumber, inputFood);
+        Map<Integer, Double> result;
+        System.out.println(dataTrain);
+        System.out.println(inputFood);
+        if (dataTrain.get(new Pair<>(inputFood, (double) 0.0f)) == null) {
+            result = AddDataComponent.recommendModel.recommendConstraint(dataTrain);
+        } else {
+            result = AddDataComponent.recommendModel.recommendPairwise(AddDataComponent.trainedPairwise, inputFood, 2.0f);
         }
-        int k = data.size();
-        Random random = new Random();
-        for (int i = 0; i < data.size(); i++){
-            int index = random.nextInt(k);
-            Collections.swap(data, i, index);
-            k -= 1;
-            if (k == 0){
-                break;
-            }
+        Map<String, Double> finalResult = new HashMap<>();
+        for (Map.Entry<Integer, Double> entry : result.entrySet()){
+            finalResult.put(AddDataComponent.reverseMapping.get(entry.getKey()), entry.getValue());
         }
-        return new ApiResponse(200, "data recommended", data.stream().limit(10));
+        return new ApiResponse(200, "data recommended", finalResult);
     }
 }
